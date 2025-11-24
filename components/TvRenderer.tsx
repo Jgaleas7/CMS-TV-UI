@@ -265,7 +265,9 @@ export const TvRail: React.FC<TvComponentProps> = ({ section, isSectionFocused, 
   const itemWidth = section.layout.itemWidth;
   const itemHeight = section.layout.itemHeight;
   const gap = section.layout.gap;
-  const containerPadding = 60; // Align content with Hero padding
+  // Reduce inner container padding by 16px (pl-4) to keep visual alignment with Hero at 60px,
+  // while providing buffer for the focus ring scaling
+  const containerPadding = 44; 
 
   // Calculate shift: Negative translation to move items LEFT so focused item is at "containerPadding"
   // When focusedItemIndex is 0, shift is 0.
@@ -280,12 +282,13 @@ export const TvRail: React.FC<TvComponentProps> = ({ section, isSectionFocused, 
         {section.title}
       </h3>
       
-      <div className="w-full overflow-hidden py-4">
+      {/* Added pl-4 to outer container to create a safe zone for the left-side focus ring expansion */}
+      <div className="w-full overflow-hidden py-4 pl-4">
         <div 
             className="flex transition-transform duration-500 cubic-bezier(0.2, 0.0, 0.2, 1)" // Smooth easing
             style={{ 
                 transform: `translate3d(-${shift}px, 0, 0)`, 
-                paddingLeft: `${containerPadding}px`, // Initial offset
+                paddingLeft: `${containerPadding}px`, // Adjusted offset
                 gap: `${gap}px` 
             }}
         >

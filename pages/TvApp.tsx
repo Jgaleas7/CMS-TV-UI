@@ -64,6 +64,9 @@ const TvApp: React.FC = () => {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!config) return;
 
+    // The footer is conceptually the section AFTER the last content section
+    const footerIndex = config.page.sections.length;
+
     // 1. Player Mode
     if (playingItem) {
         if (e.key === 'Escape' || e.key === 'Backspace') {
@@ -108,10 +111,18 @@ const TvApp: React.FC = () => {
       e.preventDefault();
     } 
     else if (e.key === 'ArrowDown') {
-      setActiveSectionIndex(prev => Math.min(config.page.sections.length - 1, prev + 1));
+      // Allow navigating TO the footer (footerIndex)
+      setActiveSectionIndex(prev => Math.min(footerIndex, prev + 1));
       e.preventDefault();
     } 
     else if (e.key === 'ArrowLeft') {
+      // If on Footer, go to menu
+      if (activeSectionIndex === footerIndex) {
+        setFocusZone('MENU');
+        e.preventDefault();
+        return;
+      }
+
       const currentItemIdx = activeItemIndices[activeSectionIndex] || 0;
       
       if (currentItemIdx === 0) {
@@ -127,8 +138,17 @@ const TvApp: React.FC = () => {
       e.preventDefault();
     } 
     else if (e.key === 'ArrowRight') {
+      // No horizontal nav on footer
+      if (activeSectionIndex === footerIndex) {
+        e.preventDefault();
+        return;
+      }
+
       setActiveItemIndices(prev => {
         const currentSection = config.page.sections[activeSectionIndex];
+        // Safety check
+        if (!currentSection) return prev;
+
         const maxIndex = currentSection.items.length - 1;
         const newIndices = [...prev];
         const currentIndex = newIndices[activeSectionIndex] || 0;
@@ -138,6 +158,12 @@ const TvApp: React.FC = () => {
       e.preventDefault();
     }
     else if (e.key === 'Enter') {
+      // Footer isn't clickable in this demo
+      if (activeSectionIndex === footerIndex) {
+        e.preventDefault();
+        return;
+      }
+
       const idx = activeItemIndices[activeSectionIndex] || 0;
       const item = config.page.sections[activeSectionIndex].items[idx];
       if (item) {
@@ -187,12 +213,18 @@ const TvApp: React.FC = () => {
       return <TvPlayer item={playingItem} onClose={() => setPlayingItem(null)} />;
   }
 
+  const footerIndex = config.page.sections.length;
+  const isFooterFocused = focusZone === 'CONTENT' && activeSectionIndex === footerIndex;
+
   // Visual offsets for focus
-  const translateY = activeSectionIndex === 0 ? 0 : -(activeSectionIndex * 380) + 120; // Adjusted for new layout
+  // If footer is focused, scroll up significantly to reveal the bottom
+  const translateY = activeSectionIndex === 0 
+    ? 0 
+    : activeSectionIndex === footerIndex
+      ? -(activeSectionIndex * 380) + 350 // Pull up more for footer visibility
+      : -(activeSectionIndex * 380) + 120;
   
   // Layout Calculation: Use PADDING instead of MARGIN to prevent overflow
-  // Sidebar collapsed = 96px (w-24) -> padding-left: 28 (7rem = 112px roughly to clear)
-  // Sidebar open = 288px (w-72) -> padding-left: 80 (20rem = 320px)
   const contentPadding = focusZone === 'MENU' ? 'pl-80 opacity-60 scale-95 origin-left' : 'pl-28 opacity-100 scale-100 origin-left';
 
   return (
@@ -228,7 +260,7 @@ const TvApp: React.FC = () => {
           style={{ transform: `translateY(${translateY}px)` }}
         >
           {config.page.sections.map((section, idx) => {
-            // Only focus content if we are in CONTENT zone
+            // Only focus content if we are in CONTENT zone and index matches
             const isFocused = focusZone === 'CONTENT' && idx === activeSectionIndex;
             const focusedItemIdx = activeItemIndices[idx] || 0;
             
@@ -248,11 +280,24 @@ const TvApp: React.FC = () => {
                 key={section.id} 
                 section={section} 
                 isSectionFocused={isFocused} 
-                focusedItemIndex={focusedItemIdx}
+                focusedItemIndex={focusedItemIdx} 
               />
             );
           })}
           
+          {/* Footer Attribution in Flow */}
+          <div 
+            className={`w-full flex flex-col items-center py-20 transition-all duration-300 ${isFooterFocused ? 'opacity-100 scale-110 text-white' : 'opacity-50 scale-100 text-slate-400'}`}
+          >
+            <div className="text-sm font-medium">
+              Made by <span className="text-indigo-400 font-bold">Juan Galeas</span>
+            </div>
+            <div className="flex gap-4 mt-2 text-xs font-mono tracking-wide">
+              <span className={isFooterFocused ? 'text-indigo-300' : ''}>juangaleas.com</span>
+              <span className={isFooterFocused ? 'text-indigo-300' : ''}>github.com/jgaleas</span>
+            </div>
+          </div>
+
           <div className="h-[600px]" />
         </div>
       </div>
