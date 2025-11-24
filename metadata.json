@@ -1,0 +1,5 @@
+{
+  "name": "StreamForge CMS",
+  "description": "A headless CMS architecture and admin panel for multi-platform TV streaming applications (React Native / LightningJS).",
+  "requestFramePermissions": []
+}
